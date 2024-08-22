@@ -31,7 +31,6 @@ use chrono::Local;
 
 use crate::{Command, Level, MsgTuple, OutputStream};
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Named Constants
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,7 +58,6 @@ pub const STDOUT_FILENAME: &str = "logs/stdout_redirect.log";
 #[cfg(test)]
 pub const FILE_OUT_FILENAME: &str = "logs/file_out_redirect.log";
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,7 +69,6 @@ pub struct Receiver {
     output_stream: OutputStream,
     msg_count: Arc<AtomicU64>,
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Object Implementation
@@ -95,7 +92,6 @@ impl Receiver {
         }
     }
 
-
     /*  *  *  *  *  *  *\
      * Utility Methods *
     \*  *  *  *  *  *  */
@@ -109,11 +105,16 @@ impl Receiver {
         );
 
         // Open a logfile, creating logs directory if necessary
-        let logfile_name = format!(
-            "{}_{}.log",
-            self.logfile_prefix,
-            start_time.format(FILE_TIMESTAMP_FORMAT)
-        );
+        let logfile_name = match self.output_stream {
+            OutputStream::File | OutputStream::Both => {
+                format!(
+                    "{}_{}.log",
+                    self.logfile_prefix,
+                    start_time.format(FILE_TIMESTAMP_FORMAT)
+                )
+            }
+            _ => "".to_string(),
+        };
 
         let mut path_buf = PathBuf::from(LOGFILE_DIR);
         if !path_buf.as_path().exists() {
@@ -193,7 +194,6 @@ impl Receiver {
             }
         }
     }
-
 
     /*  *  *  *  *  *  *\
      * Helper Methods *
