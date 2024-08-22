@@ -113,7 +113,7 @@ impl Receiver {
                     start_time.format(FILE_TIMESTAMP_FORMAT)
                 )
             }
-            _ => "".to_string(),
+            _ => "empty.log".to_string(),
         };
 
         let mut path_buf = PathBuf::from(LOGFILE_DIR);
