@@ -206,22 +206,23 @@ impl Receiver {
         if log_tuple.level >= self.output_level {
             // Console output
             if self.output_stream as u8 & OutputStream::StdOut as u8 != 0 {
-                let log_color = match log_tuple.level {
-                    Level::Trace => "\x1b[030;105m",
-                    Level::Debug => "\x1b[030;106m",
-                    Level::Info => "\x1b[030;107m",
-                    Level::Warning => "\x1b[030;103m",
-                    Level::Error => "\x1b[030;101m",
-                    Level::Fatal => "\x1b[031;040m",
+                let (log_color, msg_color) = match log_tuple.level {
+                    Level::Trace => ("\x1b[030;105m", "\x1b[95m"),
+                    Level::Debug => ("\x1b[030;106m", "\x1b[96m"),
+                    Level::Info => ("\x1b[030;107m", "\x1b[97m"),
+                    Level::Warning => ("\x1b[030;103m", "\x1b[93m"),
+                    Level::Error => ("\x1b[030;101m", "\x1b[91m"),
+                    Level::Fatal => ("\x1b[031;040m", "\x1b[031m"),
                 };
                 let msg_formatted = format!(
-                    "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {fn_name}() line {line}:\n{msg:>msg_leftpad$}",
+                    "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {fn_name}() line {line}:\n{msg_color}{msg:>msg_leftpad$}\x1b[0m",
                     timestamp   = formatted_timestamp,
                     color_set   = log_color,
                     level       = log_tuple.level.to_string(),
                     level_width = LEVEL_LABEL_WIDTH,
                     fn_name     = log_tuple.fn_name,
                     line        = log_tuple.line,
+                    msg_color   = msg_color,
                     msg         = log_tuple.msg,
                     msg_leftpad = MESSAGE_LEFT_PADDING + log_tuple.msg.len(),
                 );
