@@ -36,14 +36,12 @@ use chrono::DateTime;
 use chrono::Local;
 use once_cell::sync::OnceCell;
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Named Constants
 ///////////////////////////////////////////////////////////////////////////////
 
 // Buffer size of the sync_channel for sending log messages
 const CHANNEL_SIZE: usize = 512;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Module Declarations
@@ -56,7 +54,6 @@ use self::sender::Sender;
 #[doc(hidden)]
 pub mod receiver;
 use self::receiver::Receiver;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
@@ -135,7 +132,6 @@ pub enum MtLoggerError {
 #[doc(hidden)]
 pub static INSTANCE: OnceCell<MtLogger> = OnceCell::new();
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
@@ -146,6 +142,7 @@ impl MtLogger {
         logfile_prefix: &'static str,
         output_level: Level,
         output_stream: OutputStream,
+        client_mode: bool,
     ) -> Self {
         // Create the log messaging and control channel
         // Must be a sync channel in order to wrap OnceCell around an MtLogger
@@ -161,6 +158,7 @@ impl MtLogger {
             output_level,
             output_stream,
             Arc::clone(&msg_count),
+            client_mode,
         );
         thread::Builder::new()
             .name("log_receiver".to_string())
@@ -177,7 +175,6 @@ impl MtLogger {
         }
     }
 
-
     /*  *  *  *  *  *  *  *\
      *  Accessor Methods  *
     \*  *  *  *  *  *  *  */
@@ -186,7 +183,6 @@ impl MtLogger {
     pub fn msg_count(&self) -> u64 {
         self.msg_count.load(Ordering::SeqCst)
     }
-
 
     /*  *  *  *  *  *  *  *\
      *   Utility Methods  *
@@ -241,7 +237,6 @@ impl MtLogger {
     }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Static Functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -251,7 +246,6 @@ impl MtLogger {
 pub fn mt_now() -> DateTime<Local> {
     Local::now()
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Trait Implementations
@@ -273,7 +267,6 @@ impl fmt::Display for Level {
         }
     }
 }
-
 
 /*  *  *  *  *  *  *  *\
  *    MtLoggerError   *
@@ -321,7 +314,6 @@ impl From<RecvError> for MtLoggerError {
     }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Macro Definitions
 ///////////////////////////////////////////////////////////////////////////////
@@ -351,14 +343,14 @@ impl From<RecvError> for MtLoggerError {
 /// ```
 #[macro_export]
 macro_rules! mt_new {
-    ($logfile_prefix:expr, $output_level:expr, $output_stream:expr) => {{
+    ($logfile_prefix:expr, $output_level:expr, $output_stream:expr, $client_mode:expr) => {{
         // Use prefix if specified, or default to parent package name
         let prefix = match $logfile_prefix {
             Some(specified_prefix) => specified_prefix,
             None => env!("CARGO_PKG_NAME"),
         };
 
-        let logger = $crate::MtLogger::new(prefix, $output_level, $output_stream);
+        let logger = $crate::MtLogger::new(prefix, $output_level, $output_stream, $client_mode);
 
         $crate::INSTANCE
             .set(logger)
@@ -570,7 +562,6 @@ macro_rules! mt_flush {
     };
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  Unit Tests
 ///////////////////////////////////////////////////////////////////////////////
@@ -591,14 +582,11 @@ mod tests {
     use crate::receiver::{FILE_OUT_FILENAME, STDOUT_FILENAME};
     use crate::{Level, OutputStream, INSTANCE};
 
-
     type TestResult = Result<(), Box<dyn Error>>;
-
 
     lazy_static! {
         static ref LOGGER_MUTEX: Mutex<()> = Mutex::new(());
     }
-
 
     #[derive(Debug, PartialEq)]
     enum VerfFile {
@@ -621,7 +609,6 @@ mod tests {
     const FILE_OUT_PADLESS_LEVEL_IDX: usize = 2;
     const FILE_OUT_FN_NAME_IDX: usize = 3;
     const FILE_OUT_LINE_NUM_IDX: usize = 4;
-
 
     // Reset verification files, if they exist
     fn reset_verf_files() -> TestResult {
@@ -780,7 +767,7 @@ mod tests {
 
         // Create or update logger instance such that all messages are logged to Both outputs
         if INSTANCE.get().is_none() {
-            mt_new!(LOGFILE_PREFIX, Level::Trace, OutputStream::Both);
+            mt_new!(LOGFILE_PREFIX, Level::Trace, OutputStream::Both, false);
         } else {
             mt_level!(Level::Trace);
             mt_stream!(OutputStream::Both);
@@ -931,7 +918,7 @@ mod tests {
 
         // Create or update logger instance such that all messages are logged to Both outputs
         if INSTANCE.get().is_none() {
-            mt_new!(LOGFILE_PREFIX, Level::Trace, OutputStream::Both);
+            mt_new!(LOGFILE_PREFIX, Level::Trace, OutputStream::Both, false);
         } else {
             mt_level!(Level::Trace);
             mt_stream!(OutputStream::Both);
@@ -989,7 +976,7 @@ mod tests {
 
         // Set up the logger instance
         if INSTANCE.get().is_none() {
-            mt_new!(LOGFILE_PREFIX, Level::Info, OutputStream::StdOut);
+            mt_new!(LOGFILE_PREFIX, Level::Info, OutputStream::StdOut, false);
         } else {
             mt_level!(Level::Info);
             mt_stream!(OutputStream::StdOut);

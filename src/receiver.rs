@@ -68,6 +68,7 @@ pub struct Receiver {
     output_level: Level,
     output_stream: OutputStream,
     msg_count: Arc<AtomicU64>,
+    client_mode: bool,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,6 +83,7 @@ impl Receiver {
         output_level: Level,
         output_stream: OutputStream,
         msg_count: Arc<AtomicU64>,
+        client_mode: bool,
     ) -> Self {
         Self {
             logfile_prefix,
@@ -89,6 +91,7 @@ impl Receiver {
             output_level,
             output_stream,
             msg_count,
+            client_mode,
         }
     }
 
@@ -214,18 +217,32 @@ impl Receiver {
                     Level::Error => ("\x1b[030;101m", "\x1b[91m"),
                     Level::Fatal => ("\x1b[031;040m", "\x1b[031m"),
                 };
-                let msg_formatted = format!(
-                    "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {fn_name}() line {line}:\n{msg_color}{msg:>msg_leftpad$}\x1b[0m",
-                    timestamp   = formatted_timestamp,
-                    color_set   = log_color,
-                    level       = log_tuple.level.to_string(),
-                    level_width = LEVEL_LABEL_WIDTH,
-                    fn_name     = log_tuple.fn_name,
-                    line        = log_tuple.line,
-                    msg_color   = msg_color,
-                    msg         = log_tuple.msg,
-                    msg_leftpad = MESSAGE_LEFT_PADDING + log_tuple.msg.len(),
-                );
+                let msg_formatted = if self.client_mode {
+                    // Simplified format for client mode
+                    format!(
+        "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {msg_color}{msg}\x1b[0m",
+        timestamp   = formatted_timestamp,
+        color_set   = log_color,
+        level       = log_tuple.level.to_string(),
+        level_width = LEVEL_LABEL_WIDTH,
+        msg_color   = msg_color,
+        msg         = log_tuple.msg,
+    )
+                } else {
+                    // Detailed format for full logging mode
+                    format!(
+        "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {fn_name}() line {line}:\n{msg_color}{msg:>msg_leftpad$}\x1b[0m",
+        timestamp   = formatted_timestamp,
+        color_set   = log_color,
+        level       = log_tuple.level.to_string(),
+        level_width = LEVEL_LABEL_WIDTH,
+        fn_name     = log_tuple.fn_name,
+        line        = log_tuple.line,
+        msg_color   = msg_color,
+        msg         = log_tuple.msg,
+        msg_leftpad = MESSAGE_LEFT_PADDING + log_tuple.msg.len(),
+    )
+                };
 
                 // Write to console
                 println!("{}", msg_formatted);
