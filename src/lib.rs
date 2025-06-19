@@ -386,14 +386,8 @@ macro_rules! mt_log {
         let timestamp = $crate::mt_now();
 
         // Capture fully-qualified function name
-        let fn_name = {
-            fn f() {}
-            fn type_name_of<T>(_: T) -> &'static str {
-                std::any::type_name::<T>()
-            }
-            let name = type_name_of(f);
-            &name[..name.len() - 3]
-        };
+        let fn_name = format!("{}:{}:{}", file!(), line!(), column!());
+
 
         let msg_content: String = format!($( $fmt_args ),*);
 
