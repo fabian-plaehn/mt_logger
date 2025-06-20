@@ -28,7 +28,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 use chrono::Local;
-use colored::*;
+use colored::Colorize;
 
 use crate::{Command, Level, MsgTuple, OutputStream};
 
