@@ -350,6 +350,10 @@ macro_rules! mt_new {
             None => env!("CARGO_PKG_NAME"),
         };
 
+        // Enable ANSI support on Windows, if applicable
+        #[cfg(windows)]
+        colored::control::set_virtual_terminal(true).expect("Failed to enable ANSI support");
+
         let logger = $crate::MtLogger::new(prefix, $output_level, $output_stream, $client_mode);
 
         $crate::INSTANCE

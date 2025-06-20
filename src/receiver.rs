@@ -28,6 +28,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 use chrono::Local;
+use colored::*;
 
 use crate::{Command, Level, MsgTuple, OutputStream};
 
@@ -209,39 +210,44 @@ impl Receiver {
         if log_tuple.level >= self.output_level {
             // Console output
             if self.output_stream as u8 & OutputStream::StdOut as u8 != 0 {
-                let (log_color, msg_color) = match log_tuple.level {
-                    Level::Trace => ("\x1b[030;105m", "\x1b[95m"),
-                    Level::Debug => ("\x1b[030;106m", "\x1b[96m"),
-                    Level::Info => ("\x1b[030;107m", "\x1b[97m"),
-                    Level::Warning => ("\x1b[030;103m", "\x1b[93m"),
-                    Level::Error => ("\x1b[030;101m", "\x1b[91m"),
-                    Level::Fatal => ("\x1b[031;040m", "\x1b[031m"),
+                let level_str = match log_tuple.level {
+                    Level::Trace => "TRACE".on_bright_magenta().black(),
+                    Level::Debug => "DEBUG".on_bright_cyan().black(),
+                    Level::Info => "INFO".on_bright_white().black(),
+                    Level::Warning => "WARN".on_bright_yellow().black(),
+                    Level::Error => "ERROR".on_bright_red().black(),
+                    Level::Fatal => "FATAL".on_black().bright_red(),
+                };
+
+                let msg_colored = match log_tuple.level {
+                    Level::Trace => log_tuple.msg.clone().bright_magenta(),
+                    Level::Debug => log_tuple.msg.clone().bright_cyan(),
+                    Level::Info => log_tuple.msg.clone().bright_white(),
+                    Level::Warning => log_tuple.msg.clone().bright_yellow(),
+                    Level::Error => log_tuple.msg.clone().bright_red(),
+                    Level::Fatal => log_tuple.msg.clone().red(),
                 };
                 let fixed_width = 20; // +2 for parentheses
                 let msg_formatted = if self.client_mode {
                     // Simplified format for client mode
                     format!(
-        "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {msg_color}{msg}\x1b[0m",
-        timestamp   = formatted_timestamp,
-        color_set   = log_color,
-        level       = log_tuple.level.to_string(),
-        level_width = LEVEL_LABEL_WIDTH,
-        msg_color   = msg_color,
-        msg         = log_tuple.msg,
-    )
+                        "{timestamp}: [{level:^level_width$}] {msg}",
+                        timestamp = formatted_timestamp,
+                        level = level_str,
+                        level_width = LEVEL_LABEL_WIDTH,
+                        msg = msg_colored,
+                    )
                 } else {
                     // Detailed format for full logging mode
                     format!(
-        "{timestamp}: {color_set}[{level:^level_width$}]\x1b[0m {fn_name:fixed_width$} {msg_color}{msg}\x1b[0m",
-    timestamp   = formatted_timestamp,
-    color_set   = log_color,
-    level       = log_tuple.level.to_string(),
-    level_width = LEVEL_LABEL_WIDTH,
-    fn_name     = log_tuple.fn_name,
-    fixed_width = fixed_width,
-    msg_color   = msg_color,
-    msg         = log_tuple.msg,
-    )
+                        "{timestamp}: [{level:^level_width$}] {fn_name:fixed_width$} {msg}",
+                        timestamp = formatted_timestamp,
+                        level = level_str,
+                        level_width = LEVEL_LABEL_WIDTH,
+                        fn_name = log_tuple.fn_name,
+                        fixed_width = fixed_width,
+                        msg = msg_colored,
+                    )
                 };
 
                 // Write to console
