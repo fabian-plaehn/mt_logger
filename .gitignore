@@ -1,5 +1,6 @@
 # Rust-generated files
 /target/
+/src/bin
 **/*.rs.bk
 Cargo.lock
 

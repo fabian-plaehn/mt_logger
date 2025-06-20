@@ -28,6 +28,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 use chrono::Local;
+use colored;
 use colored::Colorize;
 
 use crate::{Command, Level, MsgTuple, OutputStream};
@@ -86,6 +87,9 @@ impl Receiver {
         msg_count: Arc<AtomicU64>,
         client_mode: bool,
     ) -> Self {
+        #[cfg(windows)]
+        colored::control::set_virtual_terminal(true).expect("Failed to enable ANSI support");
+
         Self {
             logfile_prefix,
             logger_rx,

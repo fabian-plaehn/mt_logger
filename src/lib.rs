@@ -351,8 +351,6 @@ macro_rules! mt_new {
         };
 
         // Enable ANSI support on Windows, if applicable
-        #[cfg(windows)]
-        colored::control::set_virtual_terminal(true).expect("Failed to enable ANSI support");
 
         let logger = $crate::MtLogger::new(prefix, $output_level, $output_stream, $client_mode);
 
